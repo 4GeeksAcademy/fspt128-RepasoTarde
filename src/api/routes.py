@@ -58,7 +58,6 @@ def login():
     if not existing_user:
         return jsonify({"Error": "User does not exist"}), 404
     
-    # Vamos a comprobar que la contraseña de existing_user == password
     if existing_user.check_password(password):
         access_token = create_access_token(identity=str(existing_user.id))
         return jsonify({"Message": "Login correcto","access_token": access_token}), 200
