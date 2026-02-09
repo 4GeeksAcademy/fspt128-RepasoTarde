@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, url_for, Blueprint
 from api.models import db, User
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
+from flask_jwt_extended import create_access_token
 
 api = Blueprint('api', __name__)
 
@@ -42,3 +43,24 @@ def signup():
     db.session.commit()
 
     return jsonify({"msg": "User created successfully"}), 201
+
+@api.route('/login', methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"Error": "Email and password are required"}), 400
+    
+    existing_user = db.session.execute(db.select(User).where(
+        User.email == email)).scalar_one_or_none()
+    if not existing_user:
+        return jsonify({"Error": "User does not exist"}), 404
+    
+    # Vamos a comprobar que la contraseña de existing_user == password
+    if existing_user.check_password(password):
+        access_token = create_access_token(identity=str(existing_user.id))
+        return jsonify({"Message": "Login correcto","access_token": access_token}), 200
+    
+    return jsonify({"Error": "Usuario o contraseña invalidos"}), 404
